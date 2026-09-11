@@ -9,13 +9,25 @@ class SalaryGrowthType:
 @dataclass 
 class SalaryModelInputs:
     starting_salary: float
-    starting_loan_balance: float
     salary_growth_dist: SalaryGrowthType
 
 @dataclass
 class LoanModelInputs:
-    loan_max_horizon_months: int = 30 * 12
-    interest_growth: float = 0.03
-    repayment_amount_pct: float = 0.09
-    repayment_threshold: float = 28_470
+    initial_loan_balance: float
+    remaining_loan_term_months: int = 30 * 12
+    max_loan_term_months: int = 30 * 12
+    base_interest_rate: float = 0.03
+    interest_rate_spread: float = 0.03
+    repayment_amount_pct_salary: float = 0.09
+    repayment_threshold: float = 29_385 
+    # Between repayment_threshold and interest_rate_spread_threshold
+    # the interest rate on the loan is increased pro rata by interest_rate_spread
+    interest_rate_spread_threshold: float = 52_885
     # repayment_strategies: List[float] = []
+
+# Annual growth rates and vols
+salary_growth_amounts = {
+    "Low": (0.01, 0.05),
+    "Medium": (0.05, 0.1),
+    "High": (0.1, 0.12)
+}
