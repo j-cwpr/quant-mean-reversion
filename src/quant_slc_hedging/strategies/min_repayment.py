@@ -6,9 +6,7 @@ import pandas as pd
 from dataclasses import dataclass
 
 class MinRepaymentStrategy:
-    def __init__(self, salary_model: SalaryModel, loan_model: LoanModel) -> None:
-        self.salary_model = salary_model
-        self.loan_model = loan_model
+    """Minimum repayment strategy where no additional repayments are made."""
 
     def repayment_decision(self, salary: np.ndarray, loan_balance: np.ndarray) -> np.ndarray:
         return np.zeros(shape=salary.shape)

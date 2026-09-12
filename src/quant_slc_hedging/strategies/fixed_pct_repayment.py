@@ -5,12 +5,14 @@ import numpy as np
 import pandas as pd
 from dataclasses import dataclass
 
-class FixedRepaymentStrategy:
-    def __init__(self, salary_model: SalaryModel, loan_model: LoanModel, fixed_excess_pct: float) -> None:
-        self.salary_model = salary_model
-        self.loan_model = loan_model
+class FixedPctRepaymentStrategy:
+    """Repayment strategy that pays a fixed % of salary each month if above threshold."""
+    def __init__(self, fixed_excess_pct: float, repayment_threshold: float) -> None:
         self.fixed_excess_pct = fixed_excess_pct
+        self.repayment_threshold = repayment_threshold
 
     def repayment_decision(self, salary: np.ndarray, loan_balance: np.ndarray) -> np.ndarray:
-        # TODO
-        return np.zeros(shape=salary.shape)
+        """Returns a monthly additional repayment from an input annual salary."""
+        salary_excess = np.maximum(0, salary - self.repayment_threshold)
+        
+        return salary_excess * self.fixed_excess_pct / 12.0
