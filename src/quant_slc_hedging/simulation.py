@@ -1,13 +1,17 @@
 from quant_slc_hedging.data_model import LoanModelInputs, SalaryModelInputs, SalaryGrowthType, salary_growth_amounts
 from quant_slc_hedging.salary import SalaryModel
 from quant_slc_hedging.loan import LoanModel
+from quant_slc_hedging.strategies.min_repayment import MinRepaymentStrategy
 import numpy as np 
 import pandas as pd
+from typing import List
 
 # One SimHandler run performs n_paths sims for a salary config an strategy
 
+stategy_types = List[MinRepaymentStrategy]
+
 class SimulationHandler:
-    def __init__(self, salary_config: SalaryModelInputs, loan_config: LoanModelInputs, strategy, n_paths: int, observations: int, seed: int) -> None:
+    def __init__(self, salary_config: SalaryModelInputs, loan_config: LoanModelInputs, strategy: stategy_types, n_paths: int, observations: int, seed: int) -> None:
         self.salary_config = salary_config
         self.loan_config = loan_config
         self.strategy = strategy
@@ -16,6 +20,7 @@ class SimulationHandler:
         rng = np.random.default_rng(seed)
         self.salary_model = SalaryModel(salary_config, rng)
         self.loan_model = LoanModel(loan_config)
+        self.strategy_instance = strategy(salary_model=self.salary_model, loan_model=self.loan_model)
 
     def run_simulation(self):
         salary_paths = self.salary_model.generate_salary_paths(n_paths=self.n_paths, n_months=self.observations)
@@ -27,8 +32,13 @@ class SimulationHandler:
 
         for obs in range(1, self.observations):
             salary = salary_paths[:, obs]
-            prev_loan_balance = loan_balance[:,obs-1]
-            additional_payment = additional_payments[: ,obs-1]
+            prev_loan_balance = loan_balance[:, obs-1]
+            additional_payment = additional_payments[:, obs]
+
+            additional_payment = self.strategy_instance.repayment_decision(
+                salary=salary,
+                loan_balance=prev_loan_balance,
+            )
 
             loan_result = self.loan_model.calculate_obs(prev_loan_balance=prev_loan_balance, salaries=salary, additional_repayment=additional_payment)
 
@@ -60,5 +70,5 @@ if __name__ == "__main__":
         initial_loan_balance=initial_loan,
         remaining_loan_term_months=12*years_remaining
     )
-    sim = SimulationHandler(salary_config=salary_config, loan_config=loan_config, strategy=True, n_paths=n_paths, observations=observations, seed=seed)
+    sim = SimulationHandler(salary_config=salary_config, loan_config=loan_config, strategy=MinRepaymentStrategy, n_paths=n_paths, observations=observations, seed=seed)
     sim.run_simulation()
